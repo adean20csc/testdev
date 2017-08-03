@@ -1,0 +1,112 @@
+---
+#--------------------------------------------------
+# This playbook will check the operational status of the CAM
+#--------------------------------------------------
+
+- name: Operational Status of CAM
+  hosts: localhost
+  gather_facts: true
+  
+  vars_files: 
+    - vars.yml
+
+  tasks:
+
+    - name: Determine active network interface on CAM
+      raw: route | grep '^default' | grep -o '[^ ]*$' && hostname
+      register: iface
+
+    - name: Show iface
+      debug:
+       var: iface
+
+    - name: Show 
+      debug:
+        var: iface.stdout.split('\n') 
+
+    - name: Get the hostname of the CAM host
+      raw: hostname
+      register: hostname
+
+    - name: Show hostname
+      debug:
+        var: hostname
+
+    - name: Check for CAM on network
+      command: ansible -m ping localhost
+      register: pings
+
+#    - name: Inspect multiple images
+#      docker_image_facts:
+#        name:
+#          - slmansible
+#          - test
+#          - docker.io/ubuntu
+#      register: image
+
+#    - name: Show image
+#      debug:
+#        var: image
+
+    - name: Check that CAM Docker containers are running
+      shell: docker ps -a 
+#| grep {{ item }}
+#      ignore_errors: true
+#      with_items: "{{ docker_containers }}"
+      register: container_status
+
+#    - name: Show running containers
+#      debug:
+#        var: container_status
+
+#    - name: Check that CAM Docker containers are running
+#      command: docker inspect -f \{\{.State.Running\}\} {{ item }}
+#      ignore_errors: true
+#      with_items: "{{ docker_containers }}"
+#      register: container_status
+
+#    - name: Container present
+#      docker_container:
+#        name: "{{ item }}"
+#        state: present
+#      with_items: docker_containers
+#      register: container_status
+#      image: ubuntu:14.04
+#      command: sleep infinity
+
+
+    - name: Show container status
+      debug:
+        var: container_status
+
+
+
+
+
+
+
+
+#--------------------------------------------------------
+# ADD ON MODULE
+
+#    - name: Check that CAM Docker containers are running
+#      local_action:
+#        module: docker_facts
+#        name: "{{ item }}"
+#      with_items: docker_containers
+#      register: container_status
+
+#    - name: Show container status
+#      debug:
+#        var: container_status
+#---------------------------------------------------------
+
+    - name: Output Results
+      template:
+        src: operational_status.j2
+        dest: ./status_report
+      register: status
+
+#    - name: Show status
+#      debug:
+#        var: status

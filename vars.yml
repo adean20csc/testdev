@@ -1,0 +1,11 @@
+---
+#--------------------------------------------------
+# This is the vars file for checking the operational status of the CAM
+#--------------------------------------------------
+
+docker_containers:
+  - slmansible
+#  - slmio
+#  - slmpuppet
+#  - slmzsync
+  - test
