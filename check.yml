@@ -4,7 +4,7 @@
 #--------------------------------------------------
 
 - name: Operational Status of CAM
-  hosts: localhost
+  hosts: adeantestcam
   gather_facts: true
   
   vars_files: 
@@ -12,29 +12,117 @@
 
   tasks:
 
-    - name: Determine active network interface on CAM
-      raw: route | grep '^default' | grep -o '[^ ]*$' && hostname
-      register: iface
-
-    - name: Show iface
-      debug:
-       var: iface
-
-    - name: Show 
-      debug:
-        var: iface.stdout.split('\n') 
-
-    - name: Get the hostname of the CAM host
-      raw: hostname
-      register: hostname
+    - name: Get the hostname of CAM host
+      command: hostname
+      register: name
 
     - name: Show hostname
       debug:
-        var: hostname
+        var: name.stdout
+ 
+    - name: Get the IP address of CAM host
+      raw: ip route get 8.8.8.8 | awk '{print $NF; exit}'
+      register: ip
+
+    - name: Show IP address
+      debug:
+        var: ip.stdout
+
+    - name: Get the configured DNS server
+      command: cat /etc/resolv.conf
+      register: dns
+
+    - name: Show DNS config
+      debug:
+        var: dns.stdout
 
     - name: Check for CAM on network
       command: ansible -m ping localhost
       register: pings
+
+    - name: Show pings
+      debug:
+        var: pings.stdout
+
+    - name: Check github.com DNS resolution
+      command: nslookup github.com
+      register: github
+
+    - name: Show github.com DNS resolution
+      debug:
+        var: github
+
+    - name: Check github.csc.com DNS resolution
+      command: nslookup github.csc.com
+      register: github_csc
+
+    - name: Show github.csc.com DNS resolution
+      debug:
+        var: github_csc
+
+    - name: Check HTTPS access to github.com
+      wait_for:
+        host: github.com
+        port: 443
+        timeout: 1
+      ignore_errors: True
+      register: https_github
+
+    - name: Show HTTPS access to github.com
+      debug:
+        var: https_github
+
+    - name: Check SSH access to github.com
+      wait_for:
+        host: github.com
+        port: 22
+        timeout: 1
+      ignore_errors: True
+      register: ssh_github
+
+    - name: Show SSH access to github.com
+      debug:
+        var: ssh_github
+
+    - name: Check HTTPS access to github.csc.com
+      wait_for:
+        host: github.csc.com
+        port: 443
+        timeout: 1
+      ignore_errors: True
+      register: https_github_csc
+
+    - name: Show HTTPS access to github.csc.com
+      debug:
+        var: https_github_csc
+
+    - name: Check SSH access to github.csc.com
+      wait_for:
+        host: github.csc.com
+        port: 22
+        timeout: 1
+      ignore_errors: True
+      register: ssh_github_csc
+
+    - name: Show SSH access to github.csc.com
+      debug:
+        var: ssh_github_csc
+
+#    - name: Determine active network interface on CAM
+#      raw: route | grep '^default' | grep -o '[^ ]*$' && hostname
+#      register: iface
+
+#    - name: Show iface
+#      debug:
+#       var: iface
+
+#    - name: Show 
+#      debug:
+#        var: iface.stdout.split('\n') 
+
+#    - name: Check for CAM on network
+#      command: ansible -m ping localhost
+#      register: pings
 
 #    - name: Inspect multiple images
 #      docker_image_facts:
@@ -49,41 +137,20 @@
 #        var: image
 
     - name: Check that CAM Docker containers are running
-      shell: docker ps -a 
-#| grep {{ item }}
-#      ignore_errors: true
-#      with_items: "{{ docker_containers }}"
-      register: container_status
+      shell: docker ps -a -f status=running 
+      register: running
 
-#    - name: Show running containers
-#      debug:
-#        var: container_status
-
-#    - name: Check that CAM Docker containers are running
-#      command: docker inspect -f \{\{.State.Running\}\} {{ item }}
-#      ignore_errors: true
-#      with_items: "{{ docker_containers }}"
-#      register: container_status
-
-#    - name: Container present
-#      docker_container:
-#        name: "{{ item }}"
-#        state: present
-#      with_items: docker_containers
-#      register: container_status
-#      image: ubuntu:14.04
-#      command: sleep infinity
-
-
-    - name: Show container status
+    - name: Show running containers
       debug:
-        var: container_status
+        var: running.stdout
 
+    - name: Check that CAM Docker containers are running
+      shell: docker ps -a -f status=exited
+      register: stopped
 
-
-
-
-
+    - name: Show running containers
+      debug:
+        var: stopped.stdout
 
 
 #--------------------------------------------------------
@@ -105,7 +172,7 @@
       template:
         src: operational_status.j2
         dest: ./status_report
-      register: status
+#      register: status
 
 #    - name: Show status
 #      debug:

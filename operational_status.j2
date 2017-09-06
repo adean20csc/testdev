@@ -1,13 +1,44 @@
 #--------------------------------------------------
-# This is the output of the operational status playbook
+This is the output of the operational status playbook
 #--------------------------------------------------
+
+#--------------------------------------------------
+The CAM host name, ip address, dns config OS version
+#--------------------------------------------------
+Hostname:   {{ name.stdout }}
+IP Address: {{ ip.stdout }}
+DNS Server: {{ dns.stdout }}
 
 #--------------------------------------------------
 Is the host responding to ping requests
 #--------------------------------------------------
 {{ pings.changed }}
 
+{% if github.changed == true%}
 #--------------------------------------------------
-The current status of Docker Images
+The CAM can resolve by name:
 #--------------------------------------------------
-{{ container_status.stdout }} 
+github.com
+{% endif %}
+{% if github_csc.changed == true%}
+github.csc.com
+{% endif %}
+
+{% if github.changed == false%}
+#--------------------------------------------------
+The CAM cannot resolve by name:
+#--------------------------------------------------
+github.com
+{% endif %}
+{% if github_csc.changed == false%}
+github.csc.com
+{% endif %}
+#--------------------------------------------------
+Docker Containers that are running
+#--------------------------------------------------
+{{ running.stdout }}
+
+#--------------------------------------------------
+Docker Containers that are stopped
+#--------------------------------------------------
+{{ stopped.stdout }}
